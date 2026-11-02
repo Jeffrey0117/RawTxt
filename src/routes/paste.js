@@ -1,5 +1,6 @@
 import { createPaste, listRecent } from '../services/paste-service.js'
 import config from '../config.js'
+import { resolveBaseUrl } from '../base-url.js'
 
 const VALID_EXPIRES = ['1h', '6h', '24h', '7d', '30d', 'forever']
 
@@ -7,12 +8,13 @@ export default async function pasteRoutes(fastify) {
   fastify.get('/api/pastes', async (request) => {
     const limit = Math.min(parseInt(request.query.limit || '20', 10), 100)
     const pastes = await listRecent(limit)
+    const base = resolveBaseUrl(request)
     return {
       success: true,
       data: pastes.map(p => ({
         id: p.id,
-        url: `${config.baseUrl}/${p.id}`,
-        rawUrl: `${config.baseUrl}/${p.id}/raw`,
+        url: `${base}/${p.id}`,
+        rawUrl: `${base}/${p.id}/raw`,
         contentType: p.content_type,
         sizeBytes: p.size_bytes,
         tokenCount: p.token_count,
@@ -66,9 +68,10 @@ export default async function pasteRoutes(fastify) {
     }
 
     const paste = await createPaste(content, expiresIn)
+    const base = resolveBaseUrl(request)
     return reply.status(201).send({
       success: true,
-      data: paste
+      data: { ...paste, url: `${base}/${paste.id}`, rawUrl: `${base}/${paste.id}/raw` }
     })
   })
 }
