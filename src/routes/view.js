@@ -1,5 +1,5 @@
 import { getPaste } from '../services/paste-service.js'
-import config from '../config.js'
+import { resolveBaseUrl } from '../base-url.js'
 
 function escapeHtml(text) {
   return text
@@ -21,12 +21,12 @@ function safeJson(value) {
     .replace(/&/g, '\\u0026')
 }
 
-function buildViewPage(paste) {
+function buildViewPage(paste, baseUrl) {
   const langMap = { json: 'json', markdown: 'markdown', text: 'plaintext' }
   const lang = langMap[paste.content_type] || 'plaintext'
   const isMarkdown = paste.content_type === 'markdown'
   const escaped = escapeHtml(paste.content)
-  const viewUrl = `${config.baseUrl}/${paste.id}`
+  const viewUrl = `${baseUrl}/${paste.id}`
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -213,6 +213,6 @@ export default async function viewRoutes(fastify) {
       return reply.status(404).header('Content-Type', 'text/plain').send('Not found or expired')
     }
 
-    return reply.header('Content-Type', 'text/html; charset=utf-8').send(buildViewPage(paste))
+    return reply.header('Content-Type', 'text/html; charset=utf-8').send(buildViewPage(paste, resolveBaseUrl(request)))
   })
 }
