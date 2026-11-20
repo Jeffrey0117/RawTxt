@@ -21,7 +21,7 @@ function safeJson(value) {
     .replace(/&/g, '\\u0026')
 }
 
-function buildViewPage(paste, baseUrl) {
+export function buildViewPage(paste, baseUrl) {
   const langMap = { json: 'json', markdown: 'markdown', text: 'plaintext' }
   const lang = langMap[paste.content_type] || 'plaintext'
   const isMarkdown = paste.content_type === 'markdown'
@@ -36,7 +36,7 @@ function buildViewPage(paste, baseUrl) {
   <title>rawtxt / ${paste.id}</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  ${isMarkdown ? '<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>' : ''}
+  ${isMarkdown ? '<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>' : ''}
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #f5f5f0; color: #222; font-family: 'JetBrains Mono', monospace; }
@@ -159,7 +159,7 @@ function buildViewPage(paste, baseUrl) {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script>
     ${isMarkdown
-      ? `marked.setOptions({ highlight: (code, lang) => { try { return hljs.highlight(code, {language: lang}).value } catch(e) { return code } } }); document.getElementById('content').innerHTML = marked.parse(${safeJson(paste.content)});`
+      ? `marked.setOptions({ highlight: (code, lang) => { try { return hljs.highlight(code, {language: lang}).value } catch(e) { return code } } }); const el = document.getElementById('content'); const md = ${safeJson(paste.content)}; if (window.DOMPurify) { el.innerHTML = DOMPurify.sanitize(marked.parse(md)); } else { el.textContent = md; }`
       : 'hljs.highlightAll();'}
     new QRCode(document.getElementById('qrCanvas'), { text: ${safeJson(viewUrl)}, width: 160, height: 160 });
     const rawContent = ${safeJson(paste.content)};
